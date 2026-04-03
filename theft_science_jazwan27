@@ -1,0 +1,105 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local root = character:WaitForChild("HumanoidRootPart")
+local tweenService = game:GetService("TweenService")
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- ⚙️ الإعدادات
+local walkSpeed = 30
+local waitAtSpawn = 15 
+local nearLadderDistance = 3 
+
+-- [ دالة إنشاء لوحة الرسائل ]
+local function showNotice(seconds)
+    local screenGui = Instance.new("ScreenGui", playerGui)
+    local frame = Instance.new("Frame", screenGui)
+    frame.Size = UDim2.new(0.4, 0, 0.2, 0)
+    frame.Position = UDim2.new(0.3, 0, 0.1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+    
+    local corner = Instance.new("UICorner", frame)
+    
+    local textLabel = Instance.new("TextLabel", frame)
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.TextScaled = true
+    textLabel.Font = Enum.Font.GothamBold
+    
+    -- العد التنازلي والرسالة
+    for i = seconds, 1, -1 do
+        textLabel.Text = "🛡️ يرجى الانتظار " .. i .. " ثانية للحصول على أفضل نتيجة\n" ..
+                         "Please wait " .. i .. " seconds for the best result.\n" ..
+                         "🚀 السكربت قيد المعالجة الآن..."
+        task.wait(1)
+    end
+    
+    screenGui:Destroy()
+end
+
+-- 1. تحديد الفرق تلقائياً
+local myTeamName = player.Team and player.Team.Name or ""
+local myTeam = (string.sub(myTeamName:lower(), 1, 1) == "r") and "Red" or "Blue"
+local enemyTeam = (myTeam == "Red") and "Blue" or "Red"
+
+-- دالة المشي السلس
+local function walkTo(targetCFrame, speed)
+    local distance = (root.Position - targetCFrame.Position).Magnitude
+    local info = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
+    local tween = tweenService:Create(root, info, {CFrame = targetCFrame})
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+-- دالة البحث عن الدرج
+local function findLadderIn(teamName)
+    local base = workspace.Map:FindFirstChild(teamName)
+    if base and base:FindFirstChild("Hole") then
+        return base.Hole:FindFirstChild("Smooth Block Model", true)
+    end
+    return nil
+end
+
+local spawnPos = Vector3.new(3.295, -24.45, 1.251)
+
+print("🚀 انطلاق المهمة مع نظام الإشعارات الجديد!")
+
+-- [ ⚔️ المرحلة 1: الهجوم ]
+local enemyLadder = findLadderIn(enemyTeam)
+local enemyFlag = workspace.Map[enemyTeam].Flag:FindFirstChild("Handle", true)
+
+if enemyLadder and enemyFlag then
+    root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 0, 5) 
+    task.wait(2)
+    root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 7, 0)
+    task.wait(0.5)
+    walkTo(enemyFlag.CFrame * CFrame.new(0, 2, 0), walkSpeed)
+    task.wait(1.5) 
+
+    -- [ 🏠 المرحلة 2: الانتظار مع الإشعار ]
+    local myLadder = findLadderIn(myTeam)
+    local myFlag = workspace.Map[myTeam].Flag:FindFirstChild("Handle", true)
+    
+    if myLadder and myFlag then
+        root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 0, 5)
+        task.wait(0.5)
+        
+        -- الوصول للـ Spawn
+        root.CFrame = CFrame.new(spawnPos)
+        
+        -- تفعيل الإشعار والعد التنازلي
+        showNotice(waitAtSpawn)
+        
+        -- ✨ المشي للدرج ثم العلم
+        local nearLadderPoint = myLadder:GetPivot() * CFrame.new(0, 0, nearLadderDistance)
+        walkTo(nearLadderPoint, walkSpeed)
+        
+        local flagTarget = myFlag.CFrame * CFrame.new(0, 2, 0)
+        walkTo(flagTarget, walkSpeed)
+        
+        print("🏁 تمت المهمة بنجاح!")
+        return 
+    end
+end
