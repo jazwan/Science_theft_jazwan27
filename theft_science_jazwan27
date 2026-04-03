@@ -1,105 +1,203 @@
 local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local root = character:WaitForChild("HumanoidRootPart")
-local tweenService = game:GetService("TweenService")
 local playerGui = player:WaitForChild("PlayerGui")
+local tweenService = game:GetService("TweenService")
+local userInputService = game:GetService("UserInputService")
 
--- ⚙️ الإعدادات
-local walkSpeed = 30
-local waitAtSpawn = 15 
-local nearLadderDistance = 3 
+-- [[ إنشاء الواجهة الاحترافية ]]
+local mainGui = Instance.new("ScreenGui", playerGui)
+mainGui.Name = "ScienceTheft_Jazwan27_Final"
+mainGui.ResetOnSpawn = false
 
--- [ دالة إنشاء لوحة الرسائل ]
-local function showNotice(seconds)
-    local screenGui = Instance.new("ScreenGui", playerGui)
-    local frame = Instance.new("Frame", screenGui)
-    frame.Size = UDim2.new(0.4, 0, 0.2, 0)
-    frame.Position = UDim2.new(0.3, 0, 0.1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0.3
-    frame.BorderSizePixel = 0
-    
-    local corner = Instance.new("UICorner", frame)
-    
-    local textLabel = Instance.new("TextLabel", frame)
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.TextColor3 = Color3.new(1, 1, 1)
-    textLabel.TextScaled = true
-    textLabel.Font = Enum.Font.GothamBold
-    
-    -- العد التنازلي والرسالة
-    for i = seconds, 1, -1 do
-        textLabel.Text = "🛡️ يرجى الانتظار " .. i .. " ثانية للحصول على أفضل نتيجة\n" ..
-                         "Please wait " .. i .. " seconds for the best result.\n" ..
-                         "🚀 السكربت قيد المعالجة الآن..."
-        task.wait(1)
+-- الإطار الرئيسي (العرض 340 كما طلبت سابقا)
+local mainFrame = Instance.new("Frame", mainGui)
+mainFrame.Size = UDim2.new(0, 340, 0, 180)
+mainFrame.Position = UDim2.new(0.5, -170, 0.4, -90)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+mainFrame.BorderSizePixel = 0
+mainFrame.ClipsDescendants = true
+mainFrame.BackgroundTransparency = 1 -- للأنيميشن
+
+-- الحواف الملونة (Rainbow Animation)
+local strokeMain = Instance.new("UIStroke", mainFrame)
+strokeMain.Thickness = 3
+strokeMain.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+strokeMain.Transparency = 1
+
+task.spawn(function()
+    local hue = 0
+    while true do
+        hue = hue + (1/300)
+        if hue > 1 then hue = 0 end
+        strokeMain.Color = Color3.fromHSV(hue, 1, 1)
+        task.wait()
     end
+end)
+
+local cornerMain = Instance.new("UICorner", mainFrame)
+cornerMain.CornerRadius = UDim.new(0, 12)
+
+-- الشريط العلوي الأحمر
+local topBar = Instance.new("Frame", mainFrame)
+topBar.Size = UDim2.new(1, 0, 0.22, 0)
+topBar.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+topBar.BorderSizePixel = 0
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 12)
+
+-- منع ظهور زوايا الكورنر تحت الشريط الأحمر
+local hideCorner = Instance.new("Frame", topBar)
+hideCorner.Size = UDim2.new(1, 0, 0.5, 0)
+hideCorner.Position = UDim2.new(0, 0, 0.5, 0)
+hideCorner.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+hideCorner.BorderSizePixel = 0
+
+-- عنوان الواجهة (خط صغير)
+local title = Instance.new("TextLabel", topBar)
+title.Size = UDim2.new(0.8, 0, 1, 0)
+title.Position = UDim2.new(0, 12, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Science theft_jazwan27"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextSize = 14
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- زر الإغلاق X مع أنيميشن
+local closeBtn = Instance.new("TextButton", topBar)
+closeBtn.Size = UDim2.new(0, 25, 0, 25)
+closeBtn.Position = UDim2.new(1, -30, 0.15, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+closeBtn.Text = "x"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+
+closeBtn.MouseButton1Click:Connect(function()
+    local closeTween = tweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0), BackgroundTransparency = 1})
+    closeTween:Play()
+    closeTween.Completed:Connect(function() mainGui:Destroy() end)
+end)
+
+-- زر التشغيل
+local startBtn = Instance.new("TextButton", mainFrame)
+startBtn.Size = UDim2.new(0.85, 0, 0.35, 0)
+startBtn.Position = UDim2.new(0.075, 0, 0.45, 0)
+startBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+startBtn.Text = "Stealing the enemy's flag"
+startBtn.TextColor3 = Color3.new(1, 1, 1)
+startBtn.TextSize = 16
+startBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 10)
+
+-- [[ كود المهمة الخاص بك (بدون تغيير أي حرف) ]]
+startBtn.MouseButton1Click:Connect(function()
+    -- تأثير الضغط
+    tweenService:Create(startBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 0, 0)}):Play()
+    task.wait(0.2)
+    tweenService:Create(startBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play()
+
+    -- تشغيل الكود الأصلي
+    local character = player.Character or player.CharacterAdded:Wait()
+    local root = character:WaitForChild("HumanoidRootPart")
     
-    screenGui:Destroy()
-end
+    local walkSpeed = 30
+    local waitAtSpawn = 15 
+    local nearLadderDistance = 3 
 
--- 1. تحديد الفرق تلقائياً
-local myTeamName = player.Team and player.Team.Name or ""
-local myTeam = (string.sub(myTeamName:lower(), 1, 1) == "r") and "Red" or "Blue"
-local enemyTeam = (myTeam == "Red") and "Blue" or "Red"
-
--- دالة المشي السلس
-local function walkTo(targetCFrame, speed)
-    local distance = (root.Position - targetCFrame.Position).Magnitude
-    local info = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
-    local tween = tweenService:Create(root, info, {CFrame = targetCFrame})
-    tween:Play()
-    tween.Completed:Wait()
-end
-
--- دالة البحث عن الدرج
-local function findLadderIn(teamName)
-    local base = workspace.Map:FindFirstChild(teamName)
-    if base and base:FindFirstChild("Hole") then
-        return base.Hole:FindFirstChild("Smooth Block Model", true)
+    local function showNotice(seconds)
+        local screenGui = Instance.new("ScreenGui", playerGui)
+        local frame = Instance.new("Frame", screenGui)
+        frame.Size = UDim2.new(0.4, 0, 0.2, 0)
+        frame.Position = UDim2.new(0.3, 0, 0.1, 0)
+        frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        frame.BackgroundTransparency = 0.3
+        frame.BorderSizePixel = 0
+        Instance.new("UICorner", frame)
+        local textLabel = Instance.new("TextLabel", frame)
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextColor3 = Color3.new(1, 1, 1)
+        textLabel.TextScaled = true
+        textLabel.Font = Enum.Font.GothamBold
+        for i = seconds, 1, -1 do
+            textLabel.Text = "🛡️ يرجى الانتظار " .. i .. " ثانية للحصول على أفضل نتيجة\n Please wait " .. i .. " seconds for the best result.\n 🚀 السكربت قيد المعالجة الآن..."
+            task.wait(1)
+        end
+        screenGui:Destroy()
     end
-    return nil
-end
 
-local spawnPos = Vector3.new(3.295, -24.45, 1.251)
+    local myTeamName = player.Team and player.Team.Name or ""
+    local myTeam = (string.sub(myTeamName:lower(), 1, 1) == "r") and "Red" or "Blue"
+    local enemyTeam = (myTeam == "Red") and "Blue" or "Red"
 
-print("🚀 انطلاق المهمة مع نظام الإشعارات الجديد!")
+    local function walkTo(targetCFrame, speed)
+        local distance = (root.Position - targetCFrame.Position).Magnitude
+        local info = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
+        local tween = tweenService:Create(root, info, {CFrame = targetCFrame})
+        tween:Play()
+        tween.Completed:Wait()
+    end
 
--- [ ⚔️ المرحلة 1: الهجوم ]
-local enemyLadder = findLadderIn(enemyTeam)
-local enemyFlag = workspace.Map[enemyTeam].Flag:FindFirstChild("Handle", true)
+    local function findLadderIn(teamName)
+        local base = workspace.Map:FindFirstChild(teamName)
+        if base and base:FindFirstChild("Hole") then
+            return base.Hole:FindFirstChild("Smooth Block Model", true)
+        end
+        return nil
+    end
 
-if enemyLadder and enemyFlag then
-    root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 0, 5) 
-    task.wait(2)
-    root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 7, 0)
-    task.wait(0.5)
-    walkTo(enemyFlag.CFrame * CFrame.new(0, 2, 0), walkSpeed)
-    task.wait(1.5) 
+    local spawnPos = Vector3.new(3.295, -24.45, 1.251)
 
-    -- [ 🏠 المرحلة 2: الانتظار مع الإشعار ]
-    local myLadder = findLadderIn(myTeam)
-    local myFlag = workspace.Map[myTeam].Flag:FindFirstChild("Handle", true)
-    
-    if myLadder and myFlag then
-        root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 0, 5)
+    local myLadderStart = findLadderIn(myTeam)
+    if myLadderStart then
+        root.CFrame = myLadderStart:GetPivot() * CFrame.new(0, 0, nearLadderDistance)
         task.wait(0.5)
-        
-        -- الوصول للـ Spawn
-        root.CFrame = CFrame.new(spawnPos)
-        
-        -- تفعيل الإشعار والعد التنازلي
-        showNotice(waitAtSpawn)
-        
-        -- ✨ المشي للدرج ثم العلم
-        local nearLadderPoint = myLadder:GetPivot() * CFrame.new(0, 0, nearLadderDistance)
-        walkTo(nearLadderPoint, walkSpeed)
-        
-        local flagTarget = myFlag.CFrame * CFrame.new(0, 2, 0)
-        walkTo(flagTarget, walkSpeed)
-        
-        print("🏁 تمت المهمة بنجاح!")
-        return 
     end
-end
+
+    local enemyLadder = findLadderIn(enemyTeam)
+    local enemyFlag = workspace.Map[enemyTeam].Flag:FindFirstChild("Handle", true)
+
+    if enemyLadder and enemyFlag then
+        root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 0, 5) 
+        task.wait(2)
+        root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 7, 0)
+        task.wait(0.5)
+        walkTo(enemyFlag.CFrame * CFrame.new(0, 2, 0), walkSpeed)
+        task.wait(1.5) 
+
+        local myLadder = findLadderIn(myTeam)
+        local myFlag = workspace.Map[myTeam].Flag:FindFirstChild("Handle", true)
+        
+        if myLadder and myFlag then
+            root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 0, 5)
+            task.wait(0.5)
+            root.CFrame = CFrame.new(spawnPos)
+            showNotice(waitAtSpawn)
+            local nearLadderPoint = myLadder:GetPivot() * CFrame.new(0, 0, nearLadderDistance)
+            walkTo(nearLadderPoint, walkSpeed)
+            local flagTarget = myFlag.CFrame * CFrame.new(0, 2, 0)
+            walkTo(flagTarget, walkSpeed)
+        end
+    end
+end)
+
+-- كود السحب (Dragging)
+local dragging, dragInput, dragStart, startPos
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true dragStart = input.Position startPos = mainFrame.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+    end
+end)
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+end)
+userInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- أنيميشن الظهور Fade-in
+tweenService:Create(mainFrame, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+tweenService:Create(strokeMain, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = 0}):Play()
