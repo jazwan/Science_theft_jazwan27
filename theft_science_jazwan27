@@ -1,203 +1,226 @@
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-local tweenService = game:GetService("TweenService")
-local userInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
 
--- [[ إنشاء الواجهة الاحترافية ]]
-local mainGui = Instance.new("ScreenGui", playerGui)
-mainGui.Name = "ScienceTheft_Jazwan27_Final"
-mainGui.ResetOnSpawn = false
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
 
--- الإطار الرئيسي (العرض 340 كما طلبت سابقا)
-local mainFrame = Instance.new("Frame", mainGui)
-mainFrame.Size = UDim2.new(0, 340, 0, 180)
-mainFrame.Position = UDim2.new(0.5, -170, 0.4, -90)
-mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-mainFrame.BorderSizePixel = 0
-mainFrame.ClipsDescendants = true
-mainFrame.BackgroundTransparency = 1 -- للأنيميشن
+-- دالة إنشاء الواجهة الموحدة بالنمط الذي طلبته
+local function createStyleGui(name, size, position)
+    local screenGui = Instance.new("ScreenGui", CoreGui)
+    screenGui.Name = name
+    screenGui.IgnoreGuiInset = true
+    
+    local frame = Instance.new("Frame", screenGui)
+    frame.Size = size
+    frame.Position = position
+    frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    frame.BorderSizePixel = 0
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+    
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Thickness = 2
+    
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1, -10, 1, 0)
+    label.Position = UDim2.new(0, 5, 0, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 13
+    label.TextWrapped = true
+    label.RichText = true
+    
+    local counter = 0
+    local conn = RunService.RenderStepped:Connect(function()
+        counter = counter + 0.01
+        stroke.Color = Color3.fromHSV(counter % 1, 1, 1)
+    end)
+    
+    return screenGui, frame, label, conn
+end
 
--- الحواف الملونة (Rainbow Animation)
-local strokeMain = Instance.new("UIStroke", mainFrame)
-strokeMain.Thickness = 3
-strokeMain.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-strokeMain.Transparency = 1
+-- [1] واجهة الشعار العلوي (بنفس نمط العداد)
+local TopGui, _, TopLabel, topConn = createStyleGui("CustomLogoGui", UDim2.new(0, 450, 0, 60), UDim2.new(0.5, -225, 0.1, 0))
+TopLabel.Text = "Please follow the editor for further details!\n<font color='#FFD700'>TikTok: jazwan27</font>"
+
+task.delay(10, function()
+    if topConn then topConn:Disconnect() end
+    if TopGui then TopGui:Destroy() end
+end)
+
+-- [2] واجهة العداد التنازلي
+local timerGui, timerFrame, timerLabel, timerConn = createStyleGui("TimerGui", UDim2.new(0, 450, 0, 60), UDim2.new(0.5, -225, 0.4, -30))
+timerFrame.Visible = false
+
+local function showTimer(seconds)
+    timerFrame.Visible = true
+    for i = seconds, 1, -1 do
+        timerLabel.Text = "Please wait for <font color='#FFD700'>" .. i .. "</font> seconds to get the best result"
+        task.wait(1)
+    end
+    timerFrame.Visible = false
+end
+
+-- [3] البحث عن الماب والمواقع والأدراج والأعلام
+local map = workspace:FindFirstChild("Map")
+local spawnLocation = workspace:FindFirstChild("SpawnLocation")
+
+if not map then warn("لم يتم العثور على الماب!") return end
+if not spawnLocation then warn("لم يتم العثور على SpawnLocation!") return end
+
+local redFolder = map:FindFirstChild("Red")
+local blueFolder = map:FindFirstChild("Blue")
+
+local redLadder = redFolder and redFolder:FindFirstChild("Hole") and redFolder.Hole:FindFirstChild("Ladder")
+local blueLadder = blueFolder and blueFolder:FindFirstChild("Hole") and blueFolder.Hole:FindFirstChild("Ladder")
+
+if not (redLadder and blueLadder) then warn("هناك نقص في أجزاء السلالم!") return end
+
+local isRedTeam = true
+if player.Team then
+	if string.match(string.lower(player.Team.Name), "red") then
+		isRedTeam = true
+	elseif string.match(string.lower(player.Team.Name), "blue") then
+		isRedTeam = false
+	end
+else
+	local redDist = (rootPart.Position - redLadder:GetPivot().Position).Magnitude
+	local blueDist = (rootPart.Position - blueLadder:GetPivot().Position).Magnitude
+	isRedTeam = (redDist < blueDist)
+end
+
+local myFolder = isRedTeam and redFolder or blueFolder
+local enemyFolder = isRedTeam and blueFolder or redFolder
+
+local myLadderModel = isRedTeam and redLadder or blueLadder
+local enemyLadderModel = isRedTeam and blueLadder or redLadder
+
+local function getFlagPart(folder)
+	local flag = folder and folder:FindFirstChild("Flag", true)
+	if flag then
+		return flag:IsA("BasePart") and flag or flag:FindFirstChildWhichIsA("BasePart", true)
+	end
+	return nil
+end
+
+local myFlagPart = getFlagPart(myFolder)
+local enemyFlagPart = getFlagPart(enemyFolder)
+
+if not enemyFlagPart then warn("لم يتم العثور على علم الخصم!") return end
+if not myFlagPart then warn("لم يتم العثور على علم فريقك!") return end
+
+local function getTopLadderCFrame(ladderModel)
+	local topY = -math.huge
+	local topPart = nil
+	for _, part in ipairs(ladderModel:GetDescendants()) do
+		if part:IsA("BasePart") and part.Position.Y > topY then
+			topY = part.Position.Y
+			topPart = part
+		end
+	end
+	if topPart then return CFrame.new(topPart.Position + Vector3.new(0, 1, 2)) end
+	return ladderModel:GetPivot()
+end
+
+local myLadderPart = myLadderModel:FindFirstChild("Smooth Block Model") or myLadderModel:FindFirstChildWhichIsA("BasePart")
+local enemyLadderPart = enemyLadderModel:FindFirstChild("Smooth Block Model") or enemyLadderModel:FindFirstChildWhichIsA("BasePart")
+if not (myLadderPart and enemyLadderPart) then return end
+
+local stepOffset = Vector3.new(0, -1, 2)
+local point_SpawnLoc = CFrame.new(spawnLocation.Position + Vector3.new(0, 3, 0))
+
+local point_MyLadderBottom = CFrame.new(myLadderPart.Position + stepOffset)
+local point_MyLadderTop = getTopLadderCFrame(myLadderModel)
+local point_MyFlag = CFrame.new(myFlagPart.Position)
+
+local point_EnemyLadderBottom = CFrame.new(enemyLadderPart.Position + stepOffset)
+local point_EnemyLadderTop = getTopLadderCFrame(enemyLadderModel)
+local point_EnemyFlag = CFrame.new(enemyFlagPart.Position)
+
+local speed = 25
+
+local noclipConnection
+local function startNoclip()
+	if not noclipConnection then
+		noclipConnection = RunService.Stepped:Connect(function()
+			for _, part in ipairs(character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = false
+				end
+			end
+		end)
+	end
+end
+
+local function stopNoclip()
+	if noclipConnection then noclipConnection:Disconnect(); noclipConnection = nil end
+end
+
+local function flyTo(targetCFrame)
+	local distance = (rootPart.Position - targetCFrame.Position).Magnitude
+	local timeToTake = distance / speed
+	
+	local tweenInfo = TweenInfo.new(timeToTake, Enum.EasingStyle.Linear)
+	local tween = TweenService:Create(rootPart, tweenInfo, {CFrame = targetCFrame})
+	
+	tween:Play()
+	tween.Completed:Wait()
+end
 
 task.spawn(function()
-    local hue = 0
-    while true do
-        hue = hue + (1/300)
-        if hue > 1 then hue = 0 end
-        strokeMain.Color = Color3.fromHSV(hue, 1, 1)
-        task.wait()
-    end
+	rootPart.Anchored = false 
+	humanoid.PlatformStand = true
+	
+	local antiGravity = Instance.new("BodyVelocity")
+	antiGravity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+	antiGravity.Velocity = Vector3.new(0, 0, 0)
+	antiGravity.Parent = rootPart
+	
+	startNoclip()
+	
+	flyTo(point_MyLadderBottom)
+	flyTo(point_SpawnLoc)
+	
+	showTimer(5)
+	
+	flyTo(point_EnemyLadderBottom)
+	task.wait(1)
+	
+	flyTo(point_EnemyLadderTop)
+	task.wait(1)
+	
+	flyTo(point_EnemyFlag)
+	
+	antiGravity.Parent = nil
+	humanoid.PlatformStand = false
+	stopNoclip()
+	
+	task.wait(2)
+	
+	rootPart.Anchored = false
+	humanoid.PlatformStand = true
+	antiGravity.Parent = rootPart
+	startNoclip()
+	
+	flyTo(point_SpawnLoc)
+	
+	showTimer(10)
+	
+	flyTo(point_MyLadderBottom)
+	task.wait(1)
+	
+	flyTo(point_MyLadderTop)
+	task.wait(1)
+	
+	flyTo(point_MyFlag)
+	
+	stopNoclip()
+	antiGravity:Destroy()
+	humanoid.PlatformStand = false
+	
+	print("Subscribe to the developer's channel TikTok: jazwan27!")
 end)
-
-local cornerMain = Instance.new("UICorner", mainFrame)
-cornerMain.CornerRadius = UDim.new(0, 12)
-
--- الشريط العلوي الأحمر
-local topBar = Instance.new("Frame", mainFrame)
-topBar.Size = UDim2.new(1, 0, 0.22, 0)
-topBar.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-topBar.BorderSizePixel = 0
-Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 12)
-
--- منع ظهور زوايا الكورنر تحت الشريط الأحمر
-local hideCorner = Instance.new("Frame", topBar)
-hideCorner.Size = UDim2.new(1, 0, 0.5, 0)
-hideCorner.Position = UDim2.new(0, 0, 0.5, 0)
-hideCorner.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-hideCorner.BorderSizePixel = 0
-
--- عنوان الواجهة (خط صغير)
-local title = Instance.new("TextLabel", topBar)
-title.Size = UDim2.new(0.8, 0, 1, 0)
-title.Position = UDim2.new(0, 12, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "Science theft_jazwan27"
-title.TextColor3 = Color3.new(1, 1, 1)
-title.TextSize = 14
-title.Font = Enum.Font.GothamBold
-title.TextXAlignment = Enum.TextXAlignment.Left
-
--- زر الإغلاق X مع أنيميشن
-local closeBtn = Instance.new("TextButton", topBar)
-closeBtn.Size = UDim2.new(0, 25, 0, 25)
-closeBtn.Position = UDim2.new(1, -30, 0.15, 0)
-closeBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
-closeBtn.Text = "x"
-closeBtn.TextColor3 = Color3.new(1, 1, 1)
-closeBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
-
-closeBtn.MouseButton1Click:Connect(function()
-    local closeTween = tweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0), BackgroundTransparency = 1})
-    closeTween:Play()
-    closeTween.Completed:Connect(function() mainGui:Destroy() end)
-end)
-
--- زر التشغيل
-local startBtn = Instance.new("TextButton", mainFrame)
-startBtn.Size = UDim2.new(0.85, 0, 0.35, 0)
-startBtn.Position = UDim2.new(0.075, 0, 0.45, 0)
-startBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-startBtn.Text = "Stealing the enemy's flag"
-startBtn.TextColor3 = Color3.new(1, 1, 1)
-startBtn.TextSize = 16
-startBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 10)
-
--- [[ كود المهمة الخاص بك (بدون تغيير أي حرف) ]]
-startBtn.MouseButton1Click:Connect(function()
-    -- تأثير الضغط
-    tweenService:Create(startBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 0, 0)}):Play()
-    task.wait(0.2)
-    tweenService:Create(startBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play()
-
-    -- تشغيل الكود الأصلي
-    local character = player.Character or player.CharacterAdded:Wait()
-    local root = character:WaitForChild("HumanoidRootPart")
-    
-    local walkSpeed = 30
-    local waitAtSpawn = 15 
-    local nearLadderDistance = 3 
-
-    local function showNotice(seconds)
-        local screenGui = Instance.new("ScreenGui", playerGui)
-        local frame = Instance.new("Frame", screenGui)
-        frame.Size = UDim2.new(0.4, 0, 0.2, 0)
-        frame.Position = UDim2.new(0.3, 0, 0.1, 0)
-        frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        frame.BackgroundTransparency = 0.3
-        frame.BorderSizePixel = 0
-        Instance.new("UICorner", frame)
-        local textLabel = Instance.new("TextLabel", frame)
-        textLabel.Size = UDim2.new(1, 0, 1, 0)
-        textLabel.BackgroundTransparency = 1
-        textLabel.TextColor3 = Color3.new(1, 1, 1)
-        textLabel.TextScaled = true
-        textLabel.Font = Enum.Font.GothamBold
-        for i = seconds, 1, -1 do
-            textLabel.Text = "🛡️ يرجى الانتظار " .. i .. " ثانية للحصول على أفضل نتيجة\n Please wait " .. i .. " seconds for the best result.\n 🚀 السكربت قيد المعالجة الآن..."
-            task.wait(1)
-        end
-        screenGui:Destroy()
-    end
-
-    local myTeamName = player.Team and player.Team.Name or ""
-    local myTeam = (string.sub(myTeamName:lower(), 1, 1) == "r") and "Red" or "Blue"
-    local enemyTeam = (myTeam == "Red") and "Blue" or "Red"
-
-    local function walkTo(targetCFrame, speed)
-        local distance = (root.Position - targetCFrame.Position).Magnitude
-        local info = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
-        local tween = tweenService:Create(root, info, {CFrame = targetCFrame})
-        tween:Play()
-        tween.Completed:Wait()
-    end
-
-    local function findLadderIn(teamName)
-        local base = workspace.Map:FindFirstChild(teamName)
-        if base and base:FindFirstChild("Hole") then
-            return base.Hole:FindFirstChild("Smooth Block Model", true)
-        end
-        return nil
-    end
-
-    local spawnPos = Vector3.new(3.295, -24.45, 1.251)
-
-    local myLadderStart = findLadderIn(myTeam)
-    if myLadderStart then
-        root.CFrame = myLadderStart:GetPivot() * CFrame.new(0, 0, nearLadderDistance)
-        task.wait(0.5)
-    end
-
-    local enemyLadder = findLadderIn(enemyTeam)
-    local enemyFlag = workspace.Map[enemyTeam].Flag:FindFirstChild("Handle", true)
-
-    if enemyLadder and enemyFlag then
-        root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 0, 5) 
-        task.wait(2)
-        root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 7, 0)
-        task.wait(0.5)
-        walkTo(enemyFlag.CFrame * CFrame.new(0, 2, 0), walkSpeed)
-        task.wait(1.5) 
-
-        local myLadder = findLadderIn(myTeam)
-        local myFlag = workspace.Map[myTeam].Flag:FindFirstChild("Handle", true)
-        
-        if myLadder and myFlag then
-            root.CFrame = enemyLadder:GetPivot() * CFrame.new(0, 0, 5)
-            task.wait(0.5)
-            root.CFrame = CFrame.new(spawnPos)
-            showNotice(waitAtSpawn)
-            local nearLadderPoint = myLadder:GetPivot() * CFrame.new(0, 0, nearLadderDistance)
-            walkTo(nearLadderPoint, walkSpeed)
-            local flagTarget = myFlag.CFrame * CFrame.new(0, 2, 0)
-            walkTo(flagTarget, walkSpeed)
-        end
-    end
-end)
-
--- كود السحب (Dragging)
-local dragging, dragInput, dragStart, startPos
-mainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true dragStart = input.Position startPos = mainFrame.Position
-        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
-    end
-end)
-mainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
-end)
-userInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
--- أنيميشن الظهور Fade-in
-tweenService:Create(mainFrame, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
-tweenService:Create(strokeMain, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = 0}):Play()
