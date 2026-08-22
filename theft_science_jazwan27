@@ -1,3 +1,13 @@
+-- ==========================================
+-- 0. نظام القفل الشامل لمنع اللاق والتداخل (صارم)
+-- ==========================================
+if getgenv().IsTeleporting then
+    warn("هنالك انتقال قيد التنفيذ حالياً، يرجى الانتظار حتى يكتمل!")
+    return
+end
+
+getgenv().IsTeleporting = true
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -91,8 +101,8 @@ end
 local map = workspace:FindFirstChild("Map")
 local spawnLocation = workspace:FindFirstChild("SpawnLocation")
 
-if not map then warn("لم يتم العثور على الماب!") return end
-if not spawnLocation then warn("لم يتم العثور على SpawnLocation!") return end
+if not map then warn("لم يتم العثور على الماب!") getgenv().IsTeleporting = false return end
+if not spawnLocation then warn("لم يتم العثور على SpawnLocation!") getgenv().IsTeleporting = false return end
 
 local redFolder = map:FindFirstChild("Red")
 local blueFolder = map:FindFirstChild("Blue")
@@ -100,7 +110,7 @@ local blueFolder = map:FindFirstChild("Blue")
 local redLadder = redFolder and redFolder:FindFirstChild("Hole") and redFolder.Hole:FindFirstChild("Ladder")
 local blueLadder = blueFolder and blueFolder:FindFirstChild("Hole") and blueFolder.Hole:FindFirstChild("Ladder")
 
-if not (redLadder and blueLadder) then warn("هناك نقص في أجزاء السلالم!") return end
+if not (redLadder and blueLadder) then warn("هناك نقص في أجزاء السلالم!") getgenv().IsTeleporting = false return end
 
 local isRedTeam = true
 if player.Team then
@@ -132,8 +142,8 @@ end
 local myFlagPart = getFlagPart(myFolder)
 local enemyFlagPart = getFlagPart(enemyFolder)
 
-if not enemyFlagPart then warn("لم يتم العثور على علم الخصم!") return end
-if not myFlagPart then warn("لم يتم العثور على علم فريقك!") return end
+if not enemyFlagPart then warn("لم يتم العثور على علم الخصم!") getgenv().IsTeleporting = false return end
+if not myFlagPart then warn("لم يتم العثور على علم فريقك!") getgenv().IsTeleporting = false return end
 
 local function getTopLadderCFrame(ladderModel)
 	local topY = -math.huge
@@ -150,7 +160,7 @@ end
 
 local myLadderPart = myLadderModel:FindFirstChild("Smooth Block Model") or myLadderModel:FindFirstChildWhichIsA("BasePart")
 local enemyLadderPart = enemyLadderModel:FindFirstChild("Smooth Block Model") or enemyLadderModel:FindFirstChildWhichIsA("BasePart")
-if not (myLadderPart and enemyLadderPart) then return end
+if not (myLadderPart and enemyLadderPart) then getgenv().IsTeleporting = false return end
 
 local stepOffset = Vector3.new(0, -1, 2)
 local point_SpawnLoc = CFrame.new(spawnLocation.Position + Vector3.new(0, 3, 0))
@@ -245,4 +255,8 @@ task.spawn(function()
 	humanoid.PlatformStand = false
 	
 	print("Subscribe to the developer's channel TikTok: jazwan27!")
+    
+    getgenv().IsTeleporting = false -- إيقاف القفل بعد انتهاء كل المهمة
 end)
+
+--[سرقة علم العدو]
