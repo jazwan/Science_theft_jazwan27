@@ -75,7 +75,7 @@ local function createGradientGui(name, size, position)
     return screenGui, mainFrame, textLabel, conn
 end
 
--- [1] واجهة الشعار العلوي (الشعار الجديد الذي أرسلته)
+-- [1] واجهة الشعار العلوي
 local TopGui, _, TopLabel, topConn = createGradientGui("GhazwanWelcomeUI", UDim2.new(0, 350, 0, 70), UDim2.new(0.5, 0, 0.15, 0))
 TopLabel.Text = "Welcome, Please do not use secondary scripts\nIf you have any questions, please feel free to ask the editor.\nTikTok: jazwan27"
 
@@ -84,7 +84,7 @@ task.delay(10, function()
     if TopGui then TopGui:Destroy() end
 end)
 
--- [2] واجهة العداد التنازلي (تم وضع تأثير الأبيض والأسود مع الحفاظ على النص)
+-- [2] واجهة العداد التنازلي
 local timerGui, timerFrame, timerLabel, timerConn = createGradientGui("TimerGui", UDim2.new(0, 450, 0, 60), UDim2.new(0.5, 0, 0.4, 0))
 timerFrame.Visible = false
 
@@ -97,7 +97,7 @@ local function showTimer(seconds)
     timerFrame.Visible = false
 end
 
--- [3] البحث عن الماب والمواقع والأدراج والأعلام (نفس الكود الأصلي)
+-- [3] البحث عن الماب والمواقع والأدراج والأعلام
 local map = workspace:FindFirstChild("Map")
 local spawnLocation = workspace:FindFirstChild("SpawnLocation")
 
@@ -203,60 +203,70 @@ local function flyTo(targetCFrame)
 	tween.Completed:Wait()
 end
 
+-- ==========================================
+-- التشغيل مع حماية pcall لضمان فك القفل دائماً
+-- ==========================================
 task.spawn(function()
-	rootPart.Anchored = false 
-	humanoid.PlatformStand = true
-	
-	local antiGravity = Instance.new("BodyVelocity")
-	antiGravity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-	antiGravity.Velocity = Vector3.new(0, 0, 0)
-	antiGravity.Parent = rootPart
-	
-	startNoclip()
-	
-	flyTo(point_MyLadderBottom)
-	flyTo(point_SpawnLoc)
-	
-	showTimer(5)
-	
-	flyTo(point_EnemyLadderBottom)
-	task.wait(1)
-	
-	flyTo(point_EnemyLadderTop)
-	task.wait(1)
-	
-	flyTo(point_EnemyFlag)
-	
-	antiGravity.Parent = nil
-	humanoid.PlatformStand = false
-	stopNoclip()
-	
-	task.wait(2)
-	
-	rootPart.Anchored = false
-	humanoid.PlatformStand = true
-	antiGravity.Parent = rootPart
-	startNoclip()
-	
-	flyTo(point_SpawnLoc)
-	
-	showTimer(10)
-	
-	flyTo(point_MyLadderBottom)
-	task.wait(1)
-	
-	flyTo(point_MyLadderTop)
-	task.wait(1)
-	
-	flyTo(point_MyFlag)
-	
-	stopNoclip()
-	antiGravity:Destroy()
-	humanoid.PlatformStand = false
-	
-	print("Subscribe to the developer's channel TikTok: jazwan27!")
+    local success, errorMessage = pcall(function()
+        rootPart.Anchored = false 
+        humanoid.PlatformStand = true
+        
+        local antiGravity = Instance.new("BodyVelocity")
+        antiGravity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        antiGravity.Velocity = Vector3.new(0, 0, 0)
+        antiGravity.Parent = rootPart
+        
+        startNoclip()
+        
+        flyTo(point_MyLadderBottom)
+        flyTo(point_SpawnLoc)
+        
+        showTimer(5)
+        
+        flyTo(point_EnemyLadderBottom)
+        task.wait(1)
+        
+        flyTo(point_EnemyLadderTop)
+        task.wait(1)
+        
+        flyTo(point_EnemyFlag)
+        
+        antiGravity.Parent = nil
+        humanoid.PlatformStand = false
+        stopNoclip()
+        
+        task.wait(2)
+        
+        rootPart.Anchored = false
+        humanoid.PlatformStand = true
+        antiGravity.Parent = rootPart
+        startNoclip()
+        
+        flyTo(point_SpawnLoc)
+        
+        showTimer(10)
+        
+        flyTo(point_MyLadderBottom)
+        task.wait(1)
+        
+        flyTo(point_MyLadderTop)
+        task.wait(1)
+        
+        flyTo(point_MyFlag)
+        
+        stopNoclip()
+        antiGravity:Destroy()
+        humanoid.PlatformStand = false
+        
+        print("Subscribe to the developer's channel TikTok: jazwan27!")
+    end)
+
+    if not success then
+        warn("توقف السكربت بسبب: " .. tostring(errorMessage))
+    end
     
-    getgenv().IsTeleporting = false -- إيقاف القفل بعد انتهاء كل المهمة
+    -- يتم فك القفل هنا بشكل مؤكد بنسبة 100%
+    getgenv().IsTeleporting = false 
 end)
 
 --[سرقة علم العدو]
